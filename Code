@@ -1,0 +1,52 @@
+
+
+import streamlit as st
+# --- Solar logic ---
+zip_sun_hours = {
+    "90001": 5.5,
+    "33101": 5.0,
+    "00603": 5.2,
+    "10001": 4.2,
+    "85001": 6.0
+}
+
+def estimate_solar_savings(monthly_kwh, zip_code):
+    sun_hours = zip_sun_hours.get(zip_code, 4.5)
+    annual_kwh = monthly_kwh * 12
+    production_per_kw = sun_hours * 365 * 0.85
+    system_size_kw = round(annual_kwh / production_per_kw, 2)
+    cost_per_watt = 2.5
+    gross_cost = system_size_kw * 1000 * cost_per_watt
+    federal_credit = 0.3 * gross_cost
+    net_cost = gross_cost - federal_credit
+    electricity_rate = 0.20
+    annual_savings = annual_kwh * electricity_rate
+    payback_years = round(net_cost / annual_savings, 1)
+
+    return {
+        "System Size (kW)": system_size_kw,
+        "Annual Output (kWh)": round(system_size_kw * production_per_kw),
+        "Gross Cost ($)": round(gross_cost, 2),
+        "Net Cost after 30% Credit ($)": round(net_cost, 2),
+        "Estimated Yearly Savings ($)": round(annual_savings, 2),
+        "Estimated Payback Period (Years)": payback_years
+    }
+
+# --- UI ---
+st.set_page_config(page_title="Solar Estimator", page_icon="☀️")
+st.title("☀️ Solar Savings Estimator Chatbot")
+
+st.write("Hi! I'm your Solar Assistant. Let me help you estimate your solar system size and savings.")
+
+monthly_kwh = st.number_input("1. What’s your average **monthly electricity usage** in kWh?", min_value=0, value=800)
+zip_code = st.text_input("2. What’s your **ZIP code**?", value="00603")
+
+if st.button("🔍 Get Estimate"):
+    if monthly_kwh > 0 and zip_code:
+        estimate = estimate_solar_savings(monthly_kwh, zip_code)
+        st.success("Here’s your custom estimate:")
+        for k, v in estimate.items():
+            st.write(f"**{k}**: {v}")
+    else:
+        st.warning("Please enter valid values.")
+
